@@ -1,0 +1,14 @@
+module QSLock
+singleton QSLockConfig 1.0 QSLockConfig.qml
+Avatar 1.0 Avatar.qml
+AvatarStyle 1.0 AvatarStyle.qml
+BorderStyle 1.0 BorderStyle.qml
+Clock 1.0 Clock.qml
+DateClockStyle 1.0 DateClockStyle.qml
+ColorState 1.0 ColorState.qml
+Date 1.0 Date.qml
+HintStyle 1.0 HintStyle.qml
+InputStyle 1.0 InputStyle.qml
+Loading 1.0 Loading.qml
+PasswordInput 1.0 PasswordInput.qml
+QSLock 1.0 QSLock.qml
