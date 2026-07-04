@@ -8,7 +8,7 @@ Screen locker based on Quickshell
 # Usage
 
 ```bash
-$ git clone --depth 1 https://github.com/al0rid4l/qslock.git .config/quickshell
+$ git clone --depth=1 https://github.com/al0rid4l/qslock.git .config/quickshell
 $ qs -c qslock
 ```
 
