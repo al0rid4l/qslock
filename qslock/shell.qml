@@ -263,9 +263,6 @@ WlSessionLock {
 								}
 								break;
 							case PamResult.Failed:
-								console.log("CCCCCCCCCCCC" + auth.msg);
-								screenlock.locked = false;
-							//TODO
 								passwordInput.disable = false;
 								passwordInput.error = true;
 								passwordInput.setFocus(true);
@@ -274,9 +271,6 @@ WlSessionLock {
 								console.error("PAM file: " + auth.configDirectory + "/" + auth.config);
 								break;
 							case PamResult.MaxTries:
-								console.log("AAAAAAAA" + auth.msg);
-								screenlock.locked = false;
-							//TODO
 								passwordInput.disable = true;
 								passwordInput.error = true;
 								maxTriesLock.start();
@@ -285,9 +279,6 @@ WlSessionLock {
 								console.error("PAM Message: " + auth.msg);
 								break;
 							case PamResult.Error:
-								console.log("BBBBBB" + auth.msg);
-								screenlock.locked = false;
-							//TODO
 								passwordInput.disable = false;
 								passwordInput.error = true;
 								shakeAnim.start();
