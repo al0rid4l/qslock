@@ -58,8 +58,15 @@ Item {
 		anchors.centerIn: parent
 		width: avatarContainer.width + avatarContainer.style.border.width * 2
 		height: avatarContainer.height + avatarContainer.style.border.width * 2
-		color: avatarContainer.style.border.normal.color
+		color: avatarContainer.transformStart ? avatarContainer.style.border.focus.color : avatarContainer.style.border.normal.color
 		radius: avatarContainer.style.border.radius
+
+		Behavior on color {
+			ColorAnimation {
+				easing.type: Easing.OutQuad
+				duration: 400
+			}
+		}
 	}
 
 	MultiEffect {
@@ -107,28 +114,18 @@ Item {
 			when: avatarContainer.transformStart
 			PropertyChanges {
 				target: focusEffect
-				color: avatarContainer.style.border.focus.color
 				shadowBlur: 0.95
 				shadowOpacity: 0.6
 			}
 		}
 
-		transitions: [
-			Transition {
-				NumberAnimation {
-					properties: "shadowBlur,shadowOpacity"
-					easing.type: Easing.OutQuad
-					duration: 400
-				}
-			},
-			Transition {
-				ColorAnimation {
-					properties: "color"
-					easing.type: Easing.OutQuad
-					duration: 400
-				}
+		transitions: Transition {
+			NumberAnimation {
+				properties: "shadowBlur,shadowOpacity"
+				easing.type: Easing.OutQuad
+				duration: 400
 			}
-		]
+		}
 	}
 
 	HoverHandler {
