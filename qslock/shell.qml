@@ -21,7 +21,7 @@ WlSessionLock {
 
 		onVisibleChanged: () => {
 			// 亮屏触发howdy
-			if (!auth.active && screen.visible && !passwordInput.disable && !bgImgIn.running) {
+			if (!auth.active && !auth.firstStart && screen.visible && !passwordInput.disable && !bgImgIn.running) {
 				auth.start();
 			}
 		}
@@ -45,6 +45,7 @@ WlSessionLock {
 			sequences: QSLockConfig.howdyKeys
 			onActivated: e => {
 				if (!auth.active && !bgImgIn.running) {
+					auth.firstStart = false;
 					auth.start();
 				}
 			}
@@ -274,6 +275,16 @@ WlSessionLock {
 					NumberAnimation { target: passwordInput; property: "anchors.horizontalCenterOffset"; from: 10;  to: 0;   duration: 50; easing.type: Easing.OutQuad }
 				}
 
+				Timer {
+					id: howdyCoolDownTimer
+					interval: QSLockConfig.howdyCooldown
+					onTriggered: () => {
+						if (!auth.active && !lockwrapper.showLoading) {
+							auth.start();
+						}
+					}
+				}
+
 				PamContext {
 					id: auth
 					// user
@@ -282,11 +293,19 @@ WlSessionLock {
 
 					final property string allMsg: ""
 					final property string maxTriesMsg: ""
+					final property bool firstStart: true
 					final property var authQueue: []
 
 					onPamMessage: () => {
-						if (auth.responseRequired && passwordInput.text.length > 0) {
-							auth.respond(passwordInput.text);
+						if (auth.responseRequired) {
+							if (auth.authQueue.length) {
+								let request = auth.authQueue.shift();
+								request();
+							} else {
+								// howdy失败或没有howdy的第一次后台认证失败不需要处理
+							}
+						} else {
+							// 不重要的消息不需要处理
 						}
 
 						if (/locked/g.test(auth.message)) {
@@ -366,20 +385,10 @@ WlSessionLock {
 					}
 
 					Component.onCompleted: () => {
-						howdyCoolDownTimer.start();
+						howdyCoolDownTimer.restart();
 					}
 				}
 
-				Timer {
-					id: howdyCoolDownTimer
-					interval: QSLockConfig.howdyCooldown
-					triggeredOnStart: true
-					onTriggered: () => {
-						if (auth.active) {
-							auth.start();
-						}
-					}
-				}
 
 				IdleMonitor {
 					id: autoBlur
@@ -407,6 +416,11 @@ WlSessionLock {
 					}
 				}
 
+				function debug(text: string) {
+					debugMsg.visible = true;
+					debugMsg.text = text;
+					console.log("QSLock DEBUG: " + text);
+				}
 
 				function submit(text: string) {
 					if (text.length === 0) {
@@ -424,21 +438,21 @@ WlSessionLock {
 								auth.respond(text);
 							} else {
 								// howdy
-								auth.authQueue.push(lockwrapper.requestPAM);
+								auth.authQueue.push(() => {
+									auth.respond(text);
+								});
 							}
 						} else {
-							lockwrapper.requestPAM();
+							auth.authQueue.push(() => {
+								auth.respond(text);
+							});
+							if (!auth.start()) {
+								shakeAnim.start();
+								lockwrapper.showLoading = false;
+							}
 						}
 					}
 				}
-
-				function requestPAM() {
-					if (!auth.start()) {
-						shakeAnim.start();
-						lockwrapper.showLoading = false;
-					}
-				}
-
 			}
 
 			Text {

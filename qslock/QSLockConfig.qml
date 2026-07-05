@@ -23,7 +23,7 @@ QtObject {
 	final readonly property bool outAnimationEnabled: false
 
 	// howdy初始冷却时间
-	final readonly property int howdyCooldown: 10000
+	final readonly property int howdyCooldown: 5000
 	// howdy快捷键
 	final readonly property list<string> howdyKeys: ['Space']
 
