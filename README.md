@@ -14,7 +14,7 @@ $ qs -c qslock
 
 Integration with swayidle
 ```ini
-lock 'pidof qslock || bash -c "exec -a qslock qs -c QSLock"'
+lock 'pidof qslock || bash -c "exec -a qslock qs -c qslock"'
 before-sleep 'loginctl lock-session'
 timeout 900 'loginctl lock-session'
 timeout 1200 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors'
