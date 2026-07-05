@@ -191,6 +191,7 @@ WlSessionLock {
 						hintMsg.text = QSLockConfig.hintStyle.text;
 						hintMsg.error = false;
 						hintMsg.color = QSLockConfig.hintStyle.color;
+						return true;
 					}
 				}
 
@@ -239,13 +240,18 @@ WlSessionLock {
 					configDirectory: QSLockConfig.pamDir
 					config: QSLockConfig.pamFile
 
-					final property string msg: ""
+					final property string allMsg: ""
+					final property string maxTriesMsg: ""
 
 					onPamMessage: () => {
-						if (auth.responseRequired) {
+						if (auth.responseRequired && passwordInput.text.length > 0) {
 							auth.respond(passwordInput.text);
 						}
-						auth.msg += auth.message + "\n";
+
+						if (/locked/g.test(auth.message)) {
+							auth.maxTriesMsg = auth.message;
+						}
+						auth.allMsg += auth.message + "\n";
 						console.log("PAM: " + auth.message);
 					}
 
@@ -263,34 +269,32 @@ WlSessionLock {
 								}
 								break;
 							case PamResult.Failed:
+							case PamResult.MaxTries:
+								if (auth.maxTriesMsg.length > 0) {
+									hintMsg.errorMsg(auth.maxTriesMsg);
+									// passwordInput.disable = true;
+									// maxTriesLock.start();
+								}
 								passwordInput.disable = false;
 								passwordInput.error = true;
 								passwordInput.setFocus(true);
 								shakeAnim.start();
-								console.error("PAM Message: " + auth.msg);
+								console.error("PAM Message: " + auth.allMsg);
 								console.error("PAM file: " + auth.configDirectory + "/" + auth.config);
-								break;
-							case PamResult.MaxTries:
-								passwordInput.disable = true;
-								passwordInput.error = true;
-								maxTriesLock.start();
-								hintMsg.errorMsg("Too many failed attempts. Please try again later.");
-								console.error("QSLockError: Too many failed attempts. Please try again later.");
-								console.error("PAM Message: " + auth.msg);
 								break;
 							case PamResult.Error:
 								passwordInput.disable = false;
 								passwordInput.error = true;
 								shakeAnim.start();
 								console.error("QSLockError: Unknown error.");
-								console.error("PAM Message: " + auth.msg);
+								console.error("PAM Message: " + auth.allMsg);
 								console.error("PAM file: " + auth.configDirectory + "/" + auth.config);
 								break;
 							default:
 								console.log("QSLockCompleted: unreachable");
 								break;
 						}
-						auth.msg = "";
+						auth.allMsg = "";
 					}
 					onError: err => {
 						lockwrapper.showLoading = false;
@@ -310,9 +314,9 @@ WlSessionLock {
 						} else {
 							console.log("QSLockError: unreachable");
 						}
-						console.error("PAM Message: " + auth.msg);
+						console.error("PAM Message: " + auth.allMsg);
 						console.error("PAM file: " + auth.configDirectory + "/" + auth.config);
-						auth.msg = "";
+						auth.allMsg = "";
 					}
 				}
 
@@ -327,8 +331,8 @@ WlSessionLock {
 				Timer {
 					id: maxTriesLock
 					interval: QSLockConfig.maxTriesLockedTimeout * 1000
-
-					onTriggered: () => passwordInput.disable = false;
+					triggeredOnStart: true
+					onTriggered: () => hintMsg.clear() && (passwordInput.disable = false);
 				}
 
 				Shortcut {

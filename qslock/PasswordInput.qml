@@ -15,7 +15,7 @@ Item {
 	signal focused
 	signal textChange(text: string)
 
-	final readonly property string text: passwordInputField.text
+	final readonly property alias text: passwordInputField.text
 	final property bool showPassword: false
 	final property bool showCursor: true
 	final property bool disable: false
