@@ -19,6 +19,37 @@ WlSessionLock {
 		id: screen
 		color: "transparent"
 
+		onVisibleChanged: () => {
+			// 亮屏触发howdy
+			if (!auth.active && screen.visible && !passwordInput.disable && !bgImgIn.running) {
+				auth.start();
+			}
+		}
+
+		// 快捷键触发howdy
+		Shortcut {
+			id: howdyShortcut
+			enabled: {
+				if (QSLockConfig.howdyKeys && QSLockConfig.howdyKeys.length > 0) {
+					for (const key of QSLockConfig.howdyKeys) {
+						let normalizedStr = key.toString().toLowerCase().trim();
+						if (normalizedStr === 'enter' || normalizedStr === 'return') {
+							return false;
+						}
+					}
+					return true;
+				} else {
+					return false;
+				}
+			}
+			sequences: QSLockConfig.howdyKeys
+			onActivated: e => {
+				if (!auth.active && !bgImgIn.running) {
+					auth.start();
+				}
+			}
+		}
+
 		Rectangle {
 			id: lockMask
 			color: "transparent"
@@ -153,6 +184,15 @@ WlSessionLock {
 				}
 
 				Text {
+					id: debugMsg
+					z: 5
+					visible: false
+					color: '#ffffff'
+					font.pixelSize: 60
+					text: 'DEBUG'
+				}
+
+				Text {
 					id: hintMsg
 					z: 2
 					anchors.horizontalCenter: passwordInput.horizontalCenter
@@ -242,6 +282,7 @@ WlSessionLock {
 
 					final property string allMsg: ""
 					final property string maxTriesMsg: ""
+					final property var authQueue: []
 
 					onPamMessage: () => {
 						if (auth.responseRequired && passwordInput.text.length > 0) {
@@ -274,6 +315,11 @@ WlSessionLock {
 									hintMsg.errorMsg(auth.maxTriesMsg);
 									// passwordInput.disable = true;
 									// maxTriesLock.start();
+								}
+								if (auth.authQueue.length) {
+									let request = auth.authQueue.shift();
+									request();
+									break;
 								}
 								passwordInput.disable = false;
 								passwordInput.error = true;
@@ -318,6 +364,21 @@ WlSessionLock {
 						console.error("PAM file: " + auth.configDirectory + "/" + auth.config);
 						auth.allMsg = "";
 					}
+
+					Component.onCompleted: () => {
+						howdyCoolDownTimer.start();
+					}
+				}
+
+				Timer {
+					id: howdyCoolDownTimer
+					interval: QSLockConfig.howdyCooldown
+					triggeredOnStart: true
+					onTriggered: () => {
+						if (auth.active) {
+							auth.start();
+						}
+					}
 				}
 
 				IdleMonitor {
@@ -351,17 +412,30 @@ WlSessionLock {
 					if (text.length === 0) {
 						passwordInput.error = true;
 						return;
-					} else if (auth.active || passwordInput.disable) {
+					} else if (passwordInput.disable || bgImgIn.running) {
 						return;
 					} else {
 						passwordInput.error = false;
 						passwordInput.disable = true;
 						lockwrapper.showLoading = true
 
-						if (!auth.start()) {
-							shakeAnim.start();
-							lockwrapper.showLoading = false;
+						if (auth.active) {
+							if (auth.responseRequired) {
+								auth.respond(text);
+							} else {
+								// howdy
+								auth.authQueue.push(lockwrapper.requestPAM);
+							}
+						} else {
+							lockwrapper.requestPAM();
 						}
+					}
+				}
+
+				function requestPAM() {
+					if (!auth.start()) {
+						shakeAnim.start();
+						lockwrapper.showLoading = false;
 					}
 				}
 
