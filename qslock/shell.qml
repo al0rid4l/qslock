@@ -1,5 +1,5 @@
-//@ pragma ShellId QSLock
-//@ pragma AppId QSLock
+//@ pragma ShellId qslock
+//@ pragma AppId qslock
 pragma ComponentBehavior: Bound
 
 // import Quickshell
@@ -8,12 +8,44 @@ import QtCore
 import QtQuick.Controls
 import QtQuick.Effects
 import Quickshell.Wayland
+import Quickshell.Io
 import Quickshell.Services.Pam
 
 
 WlSessionLock {
 	id: screenlock
 	locked: true
+	final property string token: ""
+	final property int uid: 1000
+
+	function compare(str1: string, str2: string): bool {
+		let lengthMismatch = (str1.length !== str2.length);
+		let a = lengthMismatch ? str1 : str1;
+		let b = lengthMismatch ? str1 : str2;
+
+		let result = 0;
+		let maxLength = Math.max(a.length, b.length);
+
+		for (let i = 0; i < maxLength; i++) {
+			let charA = i < a.length ? a.charCodeAt(i) : 0;
+			let charB = i < b.length ? b.charCodeAt(i) : 0;
+			result |= (charA ^ charB);
+		}
+		return (result === 0) && !lengthMismatch;
+	}
+
+	IpcHandler {
+		target: 'qslock'
+
+		function unlock(token: string): bool {
+			let resultl = screenlock.compare(token, screenlock.token);
+			if (result) {
+				ipcUnlockTimer.interval = 1000 + Math.random() * 2000;
+				ipcUnlockTimer.restart();
+			}
+			return result;
+		}
+	}
 
 	WlSessionLockSurface {
 		id: screen
@@ -24,6 +56,48 @@ WlSessionLock {
 			if (!auth.active && !auth.firstStart && screen.visible && !passwordInput.disable && !bgImgIn.running) {
 				auth.start();
 			}
+		}
+
+		Component.onCompleted: () => {
+			uidFetcher.running = true;
+		}
+
+		Process {
+			id: uidFetcher
+			command: ["sh", "-c", "id -u"]
+			stdout: StdioCollector {
+				onStreamFinished: function() {
+					screenlock.uid = this.text;
+					tokenGen.running = true;
+				}
+			}
+		}
+
+
+		Process {
+			id: fileWriter
+			command: []
+		}
+
+
+		Process {
+			id: tokenGen
+			command: ["sh", "-c", "head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n'"]
+			stdout: StdioCollector {
+				onStreamFinished: function() {
+					screenlock.token = this.text.trim();
+					let file = '/run/user/' + screenlock.uid + '/qslocktoken';
+					let cmd = "echo '" + screenlock.token + "' >" + file + " && chmod 600 " + file;
+					fileWriter.command = ["sh", "-c", cmd];
+					fileWriter.running = true;
+				}
+			}
+		}
+
+		Timer {
+			id: ipcUnlockTimer
+			interval: 3000
+			onTriggered: () => screenlock.locked = false;
 		}
 
 		// 快捷键触发howdy
