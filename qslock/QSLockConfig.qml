@@ -2,10 +2,19 @@ pragma ComponentBehavior: Bound
 pragma Singleton
 
 import QtQuick
+import QtCore
 
 QtObject {
+	function expandHome(path: string): string {
+		if (path === "~")
+			return StandardPaths.writableLocation(StandardPaths.HomeLocation)
+		if (path.startsWith("~/"))
+			return StandardPaths.writableLocation(StandardPaths.HomeLocation) + path.slice(1)
+		return path
+	}
+
 	// 背景图URL
-	final readonly property url wallpaper: "/home/aidev/bg.png"
+	final readonly property url wallpaper: expandHome("~/bg.png")
 	// 背景图模糊半径
 	final readonly property int wallpaperBlur: 50
 	// PAM文件名,不包含目录
@@ -121,7 +130,7 @@ QtObject {
 
 	// 头像设置
 	final readonly property bool avatarEnabled: true
-	final readonly property url avatarImage: "/usr/local/share/avatar/avatar-1.jpg"
+	final readonly property url avatarImage: expandHome("/usr/local/share/avatar/avatar-1.jpg")
 	final readonly property AvatarStyle avatarStyle: AvatarStyle {
 		width: 160
 		height: 160
