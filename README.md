@@ -1,7 +1,7 @@
 # qslock
 Screen locker based on Quickshell
 
-![Image](https://imgur.com/a/a4TrQ8j)
+![Image](https://imgur.com/a/a4TrQ8j.gif)
 
 # Requirements
 
