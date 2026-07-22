@@ -1,6 +1,8 @@
 # qslock
 Screen locker based on Quickshell
 
+![Video](https://imgur.com/a/5qfXULo)
+
 # Requirements
 
 * Quickshell v0.3.0
