@@ -1,7 +1,7 @@
 # qslock
 Screen locker based on Quickshell
 
-![Image](https://imgur.com/a/a4TrQ8j.gif)
+![Video](./assets/lock.webm)
 
 # Requirements
 
@@ -10,7 +10,8 @@ Screen locker based on Quickshell
 # Usage
 
 ```bash
-$ git clone --depth=1 https://github.com/al0rid4l/qslock.git .config/quickshell
+$ git clone --depth=1 https://github.com/al0rid4l/qslock.git
+$ mkdir -p ~/.config/quickshell && ln -sf "$(realpath qslock/qslock)" ~/.config/quickshell/qslock
 $ qs -c qslock
 ```
 
