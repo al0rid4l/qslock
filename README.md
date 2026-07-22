@@ -1,7 +1,7 @@
 # qslock
 Screen locker based on Quickshell
 
-![Video](./assets/lock.webm)
+![Image](./assets/lock.gif)
 
 # Requirements
 
